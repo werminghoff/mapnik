@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,7 @@
 #include <mapnik/marker_cache.hpp>
 #include <mapnik/util/noncopyable.hpp>
 #include <mapnik/util/fs.hpp>
+#include <mapnik/util/name_to_int.hpp>
 #include <mapnik/image_filter_types.hpp>
 #include <mapnik/projection.hpp>
 #include <mapnik/group/group_rule.hpp>
@@ -81,11 +82,7 @@ using boost::tokenizer;
 namespace mapnik
 {
 using boost::optional;
-
-constexpr unsigned name2int(const char *str, int off = 0)
-{
-    return !str[off] ? 5381 : (name2int(str, off+1)*33) ^ static_cast<unsigned>(str[off]);
-}
+using util::name_to_int;
 
 class map_parser : util::noncopyable
 {
@@ -104,7 +101,10 @@ public:
 private:
     void parse_map_include(Map & map, xml_node const& node);
     void parse_style(Map & map, xml_node const& node);
-    void parse_layer(Map & map, xml_node const& node);
+
+    template <typename Parent>
+    void parse_layer(Parent & parent, xml_node const& node);
+
     void parse_symbolizer_base(symbolizer_base &sym, xml_node const& node);
     void parse_fontset(Map & map, xml_node const & node);
     bool parse_font(font_set & fset, xml_node const& f);
@@ -559,7 +559,8 @@ bool map_parser::parse_font(font_set & fset, xml_node const& f)
     return false;
 }
 
-void map_parser::parse_layer(Map & map, xml_node const& node)
+template <typename Parent>
+void map_parser::parse_layer(Parent & parent, xml_node const& node)
 {
     std::string name;
     try
@@ -575,7 +576,7 @@ void map_parser::parse_layer(Map & map, xml_node const& node)
         name = node.get_attr("name", std::string("Unnamed"));
 
         // If no projection is given inherit from map
-        std::string srs = node.get_attr("srs", map.srs());
+        std::string srs = node.get_attr("srs", parent.srs());
         try
         {
             // create throwaway projection object here to ensure it is valid
@@ -679,6 +680,24 @@ void map_parser::parse_layer(Map & map, xml_node const& node)
             }
         }
 
+        // compositing
+        optional<std::string> comp_op_name = node.get_opt_attr<std::string>("comp-op");
+        if (comp_op_name)
+        {
+            optional<composite_mode_e> comp_op = comp_op_from_string(*comp_op_name);
+            if (comp_op)
+            {
+                lyr.set_comp_op(*comp_op);
+            }
+            else
+            {
+                throw config_error("failed to parse comp-op: '" + *comp_op_name + "'");
+            }
+        }
+
+        optional<double> opacity = node.get_opt_attr<double>("opacity");
+        if (opacity) lyr.set_opacity(*opacity);
+
         for (auto const& child: node)
         {
 
@@ -758,8 +777,12 @@ void map_parser::parse_layer(Map & map, xml_node const& node)
                     throw config_error("Unknown exception occurred attempting to create datasoure for layer '" + lyr.name() + "'");
                 }
             }
+            else if (child.is("Layer"))
+            {
+                parse_layer(lyr, child);
+            }
         }
-        map.add_layer(std::move(lyr));
+        parent.add_layer(std::move(lyr));
     }
     catch (config_error const& ex)
     {
@@ -826,57 +849,57 @@ void map_parser::parse_symbolizers(rule & rule, xml_node const & node)
     rule.reserve(node.size());
     for (auto const& sym_node : node)
     {
-        switch (name2int(sym_node.name().c_str()))
+        switch (name_to_int(sym_node.name().c_str()))
         {
-        case name2int("PointSymbolizer"):
+        case name_to_int("PointSymbolizer"):
             parse_point_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("LinePatternSymbolizer"):
+        case name_to_int("LinePatternSymbolizer"):
             parse_line_pattern_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("PolygonPatternSymbolizer"):
+        case name_to_int("PolygonPatternSymbolizer"):
             parse_polygon_pattern_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("TextSymbolizer"):
+        case name_to_int("TextSymbolizer"):
             parse_text_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("ShieldSymbolizer"):
+        case name_to_int("ShieldSymbolizer"):
             parse_shield_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("LineSymbolizer"):
+        case name_to_int("LineSymbolizer"):
             parse_line_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("PolygonSymbolizer"):
+        case name_to_int("PolygonSymbolizer"):
             parse_polygon_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("BuildingSymbolizer"):
+        case name_to_int("BuildingSymbolizer"):
             parse_building_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("RasterSymbolizer"):
+        case name_to_int("RasterSymbolizer"):
             parse_raster_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("MarkersSymbolizer"):
+        case name_to_int("MarkersSymbolizer"):
             parse_markers_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("GroupSymbolizer"):
+        case name_to_int("GroupSymbolizer"):
             parse_group_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("DebugSymbolizer"):
+        case name_to_int("DebugSymbolizer"):
             parse_debug_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
-        case name2int("DotSymbolizer"):
+        case name_to_int("DotSymbolizer"):
             parse_dot_symbolizer(rule, sym_node);
             sym_node.set_processed(true);
             break;
@@ -895,6 +918,7 @@ void map_parser::parse_symbolizer_base(symbolizer_base &sym, xml_node const& nod
     set_symbolizer_property<symbolizer_base,composite_mode_e>(sym, keys::comp_op, node);
     set_symbolizer_property<symbolizer_base,transform_type>(sym, keys::geometry_transform, node);
     set_symbolizer_property<symbolizer_base,simplify_algorithm_e>(sym, keys::simplify_algorithm, node);
+    set_symbolizer_property<symbolizer_base,double>(sym, keys::extend, node);
 }
 
 void map_parser::parse_point_symbolizer(rule & rule, xml_node const & node)
@@ -1356,7 +1380,6 @@ void map_parser::parse_raster_symbolizer(rule & rule, xml_node const & node)
             {
                 found_colorizer = true;
                 raster_colorizer_ptr colorizer = std::make_shared<raster_colorizer>();
-                put(raster_sym, keys::colorizer, colorizer);
                 if (parse_raster_colorizer(colorizer, css))
                     put(raster_sym, keys::colorizer, colorizer);
             }

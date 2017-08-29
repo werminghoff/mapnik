@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -171,7 +171,7 @@ struct transform_node
         : base_() {}
 
     template <typename T>
-    transform_node(T const& val)
+    explicit transform_node(T const& val)
         : base_(val) {}
 
     template <typename T>

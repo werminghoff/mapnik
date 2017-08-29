@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -149,6 +149,7 @@ void cairo_renderer<T>::setup(Map const& map)
     {
         cairo_save_restore guard(context_);
         context_.set_color(*bg);
+        context_.set_operator(composite_mode_e::src);
         context_.paint();
     }
     boost::optional<std::string> const& image_filename = map.background_image();
@@ -188,12 +189,25 @@ void cairo_renderer<T>::start_layer_processing(layer const& lay, box2d<double> c
         common_.detector_->clear();
     }
     common_.query_extent_ = query_extent;
+
+    if (lay.comp_op() || lay.get_opacity() < 1.0)
+    {
+        context_.push_group();
+    }
 }
 
 template <typename T>
-void cairo_renderer<T>::end_layer_processing(layer const&)
+void cairo_renderer<T>::end_layer_processing(layer const& lay)
 {
     MAPNIK_LOG_DEBUG(cairo_renderer) << "cairo_renderer: End layer processing";
+
+    if (lay.comp_op() || lay.get_opacity() < 1.0)
+    {
+        context_.pop_group();
+        composite_mode_e comp_op = lay.comp_op() ? *lay.comp_op() : src_over;
+        context_.set_operator(comp_op);
+        context_.paint(lay.get_opacity());
+    }
 }
 
 template <typename T>

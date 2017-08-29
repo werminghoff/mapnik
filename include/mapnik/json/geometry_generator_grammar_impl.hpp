@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@
 // mapnik
 #include <mapnik/json/geometry_generator_grammar.hpp>
 #include <mapnik/geometry/fusion_adapted.hpp>
-
 
 namespace mapnik { namespace json {
 
@@ -50,40 +49,52 @@ geometry_generator_grammar<OutputIterator, Geometry>::geometry_generator_grammar
         |
         geometry_collection
         |
-        lit("null")
+        lit("null") // geometry_empty
         ;
 
     point = lit("{\"type\":\"Point\",\"coordinates\":") << point_coord << lit("}")
         ;
-    linestring = lit("{\"type\":\"LineString\",\"coordinates\":[") << linestring_coord << lit("]}")
+
+    linestring = lit("{\"type\":\"LineString\",\"coordinates\":") << linestring_coord << lit("}")
         ;
-    polygon = lit("{\"type\":\"Polygon\",\"coordinates\":[") << polygon_coord << lit("]}")
+
+    polygon = lit("{\"type\":\"Polygon\",\"coordinates\":") << polygon_coord << lit("}")
         ;
-    multi_point = lit("{\"type\":\"MultiPoint\",\"coordinates\":[") << multi_point_coord << lit("]}")
+
+    multi_point = lit("{\"type\":\"MultiPoint\",\"coordinates\":") << multi_point_coord << lit("}")
         ;
-    multi_linestring = lit("{\"type\":\"MultiLineString\",\"coordinates\":[") << multi_linestring_coord << lit("]}")
+
+    multi_linestring = lit("{\"type\":\"MultiLineString\",\"coordinates\":") << multi_linestring_coord << lit("}")
         ;
-    multi_polygon = lit("{\"type\":\"MultiPolygon\",\"coordinates\":[") << multi_polygon_coord << lit("]}")
+
+    multi_polygon = lit("{\"type\":\"MultiPolygon\",\"coordinates\":") << multi_polygon_coord << lit("}")
         ;
+
     geometry_collection = lit("{\"type\":\"GeometryCollection\",\"geometries\":[") << geometries  << lit("]}")
         ;
+
     point_coord = lit('[') << coordinate << lit(',') << coordinate  << lit(']')
         ;
-    linestring_coord = point_coord % lit(',')
+
+    linestring_coord = lit('[') << -(point_coord % lit(',')) << lit(']')
         ;
-    polygon_coord = lit('[') << exterior_ring_coord << lit(']') << interior_ring_coord
+
+    linear_ring_coord = lit('[') << -(point_coord % lit(',')) << lit(']')//linestring_coord.alias()
         ;
-    exterior_ring_coord = linestring_coord.alias()
+
+    polygon_coord = lit('[') << linear_ring_coord % lit(',') << lit(']')
         ;
-    interior_ring_coord =  *(lit(",[") << exterior_ring_coord << lit(']'))
+
+    multi_point_coord = lit('[') << -(point_coord % lit(',')) << lit(']');//linestring_coord.alias()
         ;
-    multi_point_coord = linestring_coord.alias()
+
+    multi_linestring_coord = lit('[') << linestring_coord  % lit(',') << lit(']')
         ;
-    multi_linestring_coord = (lit('[') << linestring_coord << lit(']')) % lit(',')
+
+    multi_polygon_coord = lit('[') << polygon_coord  % lit(',') << lit("]")
         ;
-    multi_polygon_coord = (lit('[') << polygon_coord << lit(']')) % lit(',')
-        ;
-    geometries =  geometry % lit(',')
+
+    geometries = geometry % lit(',')
         ;
 }
 

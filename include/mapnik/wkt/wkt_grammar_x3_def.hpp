@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,10 +26,11 @@
 #include <mapnik/wkt/wkt_grammar_x3.hpp>
 #include <mapnik/geometry/fusion_adapted.hpp>
 
-#if defined(__GNUC__) && BOOST_VERSION < 106300
+#if defined(__GNUC__)
 // instantiate `is_substitute` for reference T and reference Attribute
-// fixes gcc6 compilation issue with boost 1_61 and boost_1_62
+// fixes gcc6 compilation issue
 namespace boost { namespace spirit { namespace x3 { namespace traits {
+
 template <typename T, typename Attribute, typename Enable>
 struct is_substitute<T&, Attribute&, Enable>
   : is_substitute<T, Attribute, Enable> {};
@@ -50,14 +51,10 @@ auto make_empty = [](auto const& ctx)
     _val(ctx) = geometry::geometry_empty();
 };
 
-auto set_exterior = [](auto const& ctx)
+auto add_ring = [](auto const& ctx)
 {
-    _val(ctx).set_exterior_ring(std::move(_attr(ctx)));
-};
-
-auto add_hole = [](auto const& ctx)
-{
-    _val(ctx).add_hole(std::move(_attr(ctx)));
+    auto & ring = reinterpret_cast<geometry::linear_ring<double> &>(_attr(ctx));
+    _val(ctx).push_back(std::move(ring));
 };
 
 // start rule
@@ -83,7 +80,7 @@ x3::rule<class geometries, mapnik::geometry::geometry_collection<double> > const
 
 auto const point_text_def = '(' > double_ > double_ > ')';
 auto const positions_def = lit('(') > (double_ > double_) % lit(',') > lit(')');
-auto const polygon_rings_def = '(' > positions[set_exterior] > *(lit(',') > positions[add_hole]) > ')';
+auto const polygon_rings_def = '(' > positions[add_ring] % lit(',') > ')';
 auto const points_def = (lit('(') >> ((point_text_def % ',') > lit(')'))) | positions_def ;
 auto const lines_def = lit('(') > (positions_def % lit(',')) > lit(')');
 auto const polygons_def = lit('(') > (polygon_rings % lit(',')) > lit(')');

@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2015 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -168,7 +168,7 @@ int main (int argc, char** argv)
     std::clog << "split ratio:" << ratio << std::endl;
 
     using box_type = mapnik::box2d<float>;
-    using item_type = std::pair<box_type, std::pair<std::size_t, std::size_t>>;
+    using item_type = std::pair<box_type, std::pair<std::uint64_t, std::uint64_t>>;
 
     for (auto const& filename : files_to_process)
     {
@@ -208,7 +208,7 @@ int main (int argc, char** argv)
         {
             std::clog << extent << std::endl;
             mapnik::box2d<double> extent_d(extent.minx(), extent.miny(), extent.maxx(), extent.maxy());
-            mapnik::quad_tree<std::pair<std::size_t, std::size_t>> tree(extent_d, depth, ratio);
+            mapnik::quad_tree<std::pair<std::uint64_t, std::uint64_t>> tree(extent_d, depth, ratio);
             for (auto const& item : boxes)
             {
                 auto ext_f = std::get<0>(item);

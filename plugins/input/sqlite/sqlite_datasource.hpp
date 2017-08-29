@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,6 +82,7 @@ private:
     const std::string intersects_token_;
     mapnik::layer_descriptor desc_;
     mapnik::wkbFormat format_;
+    bool twkb_encoding_;
     bool use_spatial_index_;
     bool has_spatial_index_;
     bool using_subquery_;

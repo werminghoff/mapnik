@@ -1,6 +1,6 @@
 # This file is part of Mapnik (c++ mapping toolkit)
 #
-# Copyright (C) 2015 Artem Pavlenko
+# Copyright (C) 2017 Artem Pavlenko
 #
 # Mapnik is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -116,6 +116,7 @@ PLUGINS = { # plugins with external dependencies
             'csv':     {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
             'raster':  {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
             'geojson': {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
+            'geobuf':  {'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'},
             'topojson':{'default':True,'path':None,'inc':None,'lib':None,'lang':'C++'}
             }
 
@@ -1129,6 +1130,7 @@ if not preconfigured:
     else:
         color_print(4,'SCons USE_CONFIG specified as false, will not inherit variables python config file...')
 
+
     conf = Configure(env, custom_tests = conf_tests)
 
     if env['DEBUG']:
@@ -1141,6 +1143,9 @@ if not preconfigured:
 
     env['PLATFORM'] = platform.uname()[0]
     color_print(4,"Configuring on %s in *%s*..." % (env['PLATFORM'],mode))
+
+    cxx_version = call("%s --version" % env["CXX"] ,silent=True)
+    color_print(5, "CXX %s" % cxx_version)
 
     env['MISSING_DEPS'] = []
     env['SKIPPED_DEPS'] = []
@@ -1598,6 +1603,8 @@ if not preconfigured:
     env.Prepend(CPPPATH = '#deps/agg/include')
     env.Prepend(LIBPATH = '#deps/agg')
     env.Prepend(CPPPATH = '#deps/mapbox/variant/include')
+    env.Prepend(CPPPATH = '#deps/mapbox/geometry/include')
+    env.Prepend(CPPPATH = '#deps/mapbox/protozero/include')
     # prepend deps dir for auxillary headers
     env.Prepend(CPPPATH = '#deps')
 
@@ -1783,7 +1790,7 @@ if not preconfigured:
         # Common flags for g++/clang++ CXX compiler.
         # TODO: clean up code more to make -Wextra -Wsign-compare -Wsign-conversion -Wconversion viable
         # -Wfloat-equal -Wold-style-cast -Wexit-time-destructors -Wglobal-constructors -Wreserved-id-macro -Wheader-hygiene -Wmissing-noreturn
-        common_cxx_flags = '-fvisibility=hidden -fvisibility-inlines-hidden -Wall %s %s -ftemplate-depth-300 -Wsign-compare -Wshadow ' % (env['WARNING_CXXFLAGS'], pthread)
+        common_cxx_flags = '-fvisibility=hidden -fvisibility-inlines-hidden -Wall %s %s -ftemplate-depth-300 -Wsign-compare ' % (env['WARNING_CXXFLAGS'], pthread)
 
         if 'clang++' in env['CXX']:
             common_cxx_flags += ' -Wno-unsequenced  -Wtautological-compare -Wheader-hygiene -Wc++14-extensions '
@@ -1795,7 +1802,7 @@ if not preconfigured:
             env.Append(CXXFLAGS = '-fsanitize=undefined-trap -fsanitize-undefined-trap-on-error -ftrapv -fwrapv')
 
         if env['DEBUG_SANITIZE']:
-            env.Append(CXXFLAGS = ['-fsanitize=address'])
+            env.Append(CXXFLAGS = ['-fsanitize=address','-fno-omit-frame-pointer'])
             env.Append(LINKFLAGS = ['-fsanitize=address'])
 
 

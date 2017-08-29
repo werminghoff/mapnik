@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -514,6 +514,17 @@ void serialize_layer( ptree & map_node, layer const& lyr, bool explicit_defaults
         set_attr( layer_node, "name", lyr.name() );
     }
 
+    auto const comp_op = lyr.comp_op();
+
+    if (comp_op)
+    {
+        set_attr(layer_node, "comp-op", *comp_op_to_string(*comp_op));
+    }
+    else if (explicit_defaults)
+    {
+        set_attr(layer_node, "comp-op", "src-over");
+    }
+
     if ( lyr.srs() != "" )
     {
         set_attr( layer_node, "srs", lyr.srs() );
@@ -582,6 +593,12 @@ void serialize_layer( ptree & map_node, layer const& lyr, bool explicit_defaults
     if ( datasource )
     {
         serialize_datasource( layer_node, datasource );
+    }
+
+    // serialize nested layers
+    for (auto const& child : lyr.layers())
+    {
+        serialize_layer(layer_node, child, explicit_defaults );
     }
 }
 

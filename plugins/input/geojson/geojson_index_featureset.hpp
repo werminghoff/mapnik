@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@
 
 class geojson_index_featureset : public mapnik::Featureset
 {
-    using value_type = std::pair<std::size_t, std::size_t>;
+    using value_type = std::pair<std::uint64_t, std::uint64_t>;
 public:
     geojson_index_featureset(std::string const& filename, mapnik::filter_in_box const& filter);
     virtual ~geojson_index_featureset();

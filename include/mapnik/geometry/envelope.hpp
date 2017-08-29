@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2016 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ namespace mapnik {
 namespace geometry {
 
 template <typename T>
-MAPNIK_DECL auto envelope(T const& geom) -> box2d<typename T::coord_type>;
+MAPNIK_DECL auto envelope(T const& geom) -> box2d<typename T::coordinate_type>;
 
 } // end ns geometry
 } // end ns mapnik

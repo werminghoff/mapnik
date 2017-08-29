@@ -2,7 +2,7 @@
  *
  * This file is part of Mapnik (c++ mapping toolkit)
  *
- * Copyright (C) 2015 Artem Pavlenko
+ * Copyright (C) 2017 Artem Pavlenko
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
 #pragma GCC diagnostic pop
 
 const int DEFAULT_DEPTH = 8;
-const double DEFAULT_RATIO=0.55;
+const double DEFAULT_RATIO = 0.55;
 
 int main (int argc,char** argv)
 {
@@ -187,7 +187,10 @@ int main (int argc,char** argv)
                 int shp_content_length = shp.read_xdr_integer();
                 if (shx_content_length != shp_content_length)
                 {
-                    std::clog << "Content length mismatch for record number " << record_number << std::endl;
+                    if (verbose)
+                    {
+                        std::clog << "Content length mismatch for record number " << record_number << std::endl;
+                    }
                     continue;
                 }
                 shape_type = shp.read_ndr_integer();
@@ -278,7 +281,8 @@ int main (int argc,char** argv)
         }
         else
         {
-            std::clog << "No non-empty geometries in shapefile" << std::endl;
+            std::clog << "Failed to read any features from \"" << filename << "\"" << std::endl;
+            return EXIT_FAILURE;
         }
     }
 
